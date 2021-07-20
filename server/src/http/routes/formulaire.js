@@ -49,7 +49,9 @@ module.exports = ({ mail, formulaire }) => {
       const { id_form } = req.params;
       let result = await Formulaire.findOne({ id_form }).lean();
 
-      if (!result) res.sendStatus(401);
+      if (!result) {
+        return res.sendStatus(401);
+      }
 
       return res.json(result);
     })
@@ -209,8 +211,19 @@ module.exports = ({ mail, formulaire }) => {
                 nested: {
                   path: "offres",
                   query: {
-                    match: {
-                      "offres.romes": romes.join(" "),
+                    bool: {
+                      must: [
+                        {
+                          match: {
+                            "offres.romes": romes.join(" "),
+                          },
+                        },
+                        {
+                          match: {
+                            "offres.statut": "Active",
+                          },
+                        },
+                      ],
                     },
                   },
                 },
@@ -259,7 +272,7 @@ module.exports = ({ mail, formulaire }) => {
         x._source.events = undefined;
 
         x._source.offres.forEach((o) => {
-          if (romes.some((item) => o.romes.includes(item))) {
+          if (romes.some((item) => o.romes.includes(item)) && o.statut === "Active") {
             offres.push(o);
           }
         });

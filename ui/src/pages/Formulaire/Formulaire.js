@@ -32,6 +32,11 @@ import {
   Collapse,
   Center,
   Link as ChakraLink,
+  AlertIcon,
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  CloseButton,
 } from '@chakra-ui/react'
 import { AiOutlineEdit } from 'react-icons/ai'
 import { ArrowDropRightLine } from '../../theme/components/icons/'
@@ -492,7 +497,7 @@ const Formulaire = (props) => {
               </Formik>
             )}
 
-            {formState?._id && (
+            {formState?._id && formState.adresse && formState.prenom && formState.nom ? (
               <Box mb={12}>
                 <Flex pt={12} pb={6} alignItems='center'>
                   <Box textStyle='h3' fontSize={['sm', '3xl']} fontWeight='700' color='grey.800'>
@@ -541,6 +546,11 @@ const Formulaire = (props) => {
                   </Flex>
                 )}
               </Box>
+            ) : (
+              <Alert status='info' variant='top-accent' mt={5}>
+                <AlertIcon />
+                Veuillez compléter les informations ci-dessus pour pouvoir déposer vos offres
+              </Alert>
             )}
           </Container>
         </Layout>

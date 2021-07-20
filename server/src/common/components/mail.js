@@ -69,7 +69,7 @@ module.exports = () => {
       return {
         sender: {
           name: "Mission interministérielle pour l'apprentissage",
-          email: "charlotte.lecuit@beta.gouv.fr",
+          email: "matcha@apprentissage.beta.gouv.fr",
         },
         to: [
           {
@@ -78,8 +78,8 @@ module.exports = () => {
           },
         ],
         replyTo: {
-          name: "Charlotte Lecuit",
-          email: "charlotte.lecuit@beta.gouv.fr",
+          name: "Equipe Matcha",
+          email: "matcha@apprentissage.beta.gouv.fr",
         },
         subject,
         templateId,
@@ -98,10 +98,10 @@ module.exports = () => {
         throw new Error("RequestMail ERROR", error);
       }
     },
-    getAllEventsByEmail: async (email) => {
+    getAllEvents: async (messageId) => {
       const body = {
         method: "GET",
-        url: `https://api.sendinblue.com/v3/smtp/statistics/events?limit=100&email=${email}&sort=desc`,
+        url: `https://api.sendinblue.com/v3/smtp/statistics/events?limit=100&messageId=${messageId}&sort=desc`,
         headers: { Accept: "application/json", "api-key": config.sendinblue.apikey },
       };
 
@@ -111,6 +111,79 @@ module.exports = () => {
         return events;
       } catch (error) {
         throw new Error("getAllEventsByEmail ERROR", error);
+      }
+    },
+    createContact: async ({ email, attributes, listIds }) => {
+      if (!email || !attributes || !listIds) {
+        throw new Error("missing arguments");
+      }
+
+      if (!Array.isArray(listIds) && !listIds.some(isNaN)) {
+        throw new Error("listIds must be an array of number");
+      }
+
+      const payload = {
+        method: "POST",
+        url: "https://api.sendinblue.com/v3/contacts",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "api-key": config.sendinblue.apikey,
+        },
+        body: JSON.stringify({
+          attributes: { ...attributes },
+          listIds,
+          email,
+          updateEnabled: true,
+          emailBlacklisted: false,
+          smsBlacklisted: false,
+        }),
+        maxAttempts: 10,
+        retryDelay: 5000,
+        retryStrategy: request.RetryStrategies.HTTPOrNetworkError,
+      };
+
+      const res = await request(payload);
+      return res;
+    },
+    updateContact: async ({ email, attributes, listIds }) => {
+      if (!email || !attributes || !listIds) {
+        throw new Error("missing arguments");
+      }
+
+      if (!Array.isArray(listIds) && !listIds.some(isNaN)) {
+        throw new Error("listIds must be an array of number");
+      }
+
+      const options = {
+        method: "PUT",
+        url: `https://api.sendinblue.com/v3/contacts/${email.replace("@", "%40")}`,
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+          "api-key": config.sendinblue.apikey,
+        },
+        body: JSON.stringify({
+          attributes: { ...attributes },
+          listIds,
+          updateEnabled: true,
+          emailBlacklisted: false,
+          smsBlacklisted: false,
+        }),
+        maxAttempts: 10,
+        retryDelay: 5000,
+        retryStrategy: request.RetryStrategies.HTTPOrNetworkError,
+      };
+
+      try {
+        const res = await request(options);
+        if (res.statusCode === 204) {
+          console.log(`contact ${email} updated — attemps: ${res.attempts}`);
+        } else {
+          console.log(res.body);
+        }
+      } catch (error) {
+        throw new Error(error);
       }
     },
     getRulesFromEvent: (event) => mailRules.find((rule) => rule.event === event),

@@ -1,3 +1,4 @@
 .local/
 *.xl*
 *.sandbox.js
+emailToFilter.js

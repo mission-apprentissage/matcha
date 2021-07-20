@@ -20,44 +20,15 @@ const readXLSXFile = (localPath) => {
 };
 module.exports.readXLSXFile = readXLSXFile;
 
-const createXlsx = async (worksheets = []) => {
-  if (worksheets.length === 0) return;
+const createXLSXFile = (data, localPath) => {
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data), "data");
 
-  const workbook = XLSX.utils.book_new(); // Create a new blank workbook
-
-  for (let i = 0; i < worksheets.length; i++) {
-    const { name, content } = worksheets[i];
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(content), name); // Add the worksheet to the workbook
-  }
-  return workbook;
+  XLSX.writeFileAsync(path.join(localPath), workbook, (e) => {
+    if (e) {
+      console.log(e);
+      throw new Error("La génération du fichier excel à échoué : ", e);
+    }
+  });
 };
-module.exports.createXlsx = createXlsx;
-
-const convertIntoBuffer = (workbook) => {
-  return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
-};
-module.exports.convertIntoBuffer = convertIntoBuffer;
-
-const writeXlsxFile = async (workbook, filePath, fileName) => {
-  const execWrite = () =>
-    new Promise((resolve) => {
-      XLSX.writeFileAsync(path.join(__dirname, `${filePath}/${fileName}`), workbook, (e) => {
-        if (e) {
-          console.log(e);
-          throw new Error("La génération du fichier excel à échoué : ", e);
-        }
-        resolve();
-      });
-    });
-
-  await execWrite();
-};
-module.exports.writeXlsxFile = writeXlsxFile;
-
-const removeLine = (data, regex) => {
-  return data
-    .split("\n")
-    .filter((val) => !regex.test(val))
-    .join("\n");
-};
-module.exports.removeLine = removeLine;
+module.exports.createXLSXFile = createXLSXFile;
